@@ -23,7 +23,10 @@ function App() {
   const [favorites, setFavorites] = useState([]);
 
   useEffect(()=> {
-    attemptLoginWithToken();
+    const token = window.localStorage.getItem('token');
+    if(token){
+      attemptLoginWithToken();
+    }
   }, []);
 
   const attemptLoginWithToken = async()=> {
@@ -34,7 +37,9 @@ function App() {
           authorization: token
         }
       });
+      console.log('response: ', await response);
       const json = await response.json();
+      console.log('json: ', await json);
       if(response.ok){
         setAuth(json);
       }
@@ -82,6 +87,7 @@ function App() {
     const json = await response.json();
     if(response.ok){
       window.localStorage.setItem('token', json.token);
+      console.log('token: ', await json); //dump
       attemptLoginWithToken();
     }
     else {

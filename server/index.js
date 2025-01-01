@@ -20,6 +20,14 @@ const path = require('path');
 app.get('/', (req, res)=> res.sendFile(path.join(__dirname, '../client/dist/index.html')));
 app.use('/assets', express.static(path.join(__dirname, '../client/dist/assets'))); 
 
+const isLoggedIn = async (req, res, next) => {
+  try {
+    req.user = await findUserWithToken(req.headers.authorization);
+    next();
+  } catch (ex) {
+    next(ex)
+  }
+}
 
 app.post('/api/auth/login', async(req, res, next)=> {
   try {
@@ -30,7 +38,7 @@ app.post('/api/auth/login', async(req, res, next)=> {
   }
 });
 
-app.get('/api/auth/me', async(req, res, next)=> {
+app.get('/api/auth/me', isLoggedIn, async(req, res, next)=> {
   try {
     res.send(await findUserWithToken(req.headers.authorization));
   }
@@ -48,8 +56,13 @@ app.get('/api/users', async(req, res, next)=> {
   }
 });
 
-app.get('/api/users/:id/favorites', async(req, res, next)=> {
+app.get('/api/users/:id/favorites', isLoggedIn, async(req, res, next)=> {
   try {
+    if(req.params.id !== req.user.id){
+      const error = Error('not authorized');
+      error.status = 401;
+      throw error;
+    }
     res.send(await fetchFavorites(req.params.id));
   }
   catch(ex){
@@ -57,7 +70,7 @@ app.get('/api/users/:id/favorites', async(req, res, next)=> {
   }
 });
 
-app.post('/api/users/:id/favorites', async(req, res, next)=> {
+app.post('/api/users/:id/favorites', isLoggedIn, async(req, res, next)=> {
   try {
     res.status(201).send(await createFavorite({ user_id: req.params.id, product_id: req.body.product_id}));
   }
@@ -66,7 +79,7 @@ app.post('/api/users/:id/favorites', async(req, res, next)=> {
   }
 });
 
-app.delete('/api/users/:user_id/favorites/:id', async(req, res, next)=> {
+app.delete('/api/users/:user_id/favorites/:id', isLoggedIn, async(req, res, next)=> {
   try {
     await destroyFavorite({user_id: req.params.user_id, id: req.params.id });
     res.sendStatus(204);
