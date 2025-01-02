@@ -16,6 +16,7 @@ const Login = ({ login })=> {
     </form>
   );
 }
+const Register = ({ register }) => {}
 
 function App() {
   const [auth, setAuth] = useState({});
@@ -31,21 +32,17 @@ function App() {
 
   const attemptLoginWithToken = async()=> {
     const token = window.localStorage.getItem('token');
-    if(token){
-      const response = await fetch(`/api/auth/me`, {
-        headers: {
-          authorization: token
-        }
-      });
-      console.log('response: ', await response);
-      const json = await response.json();
-      console.log('json: ', await json);
-      if(response.ok){
-        setAuth(json);
+    const response = await fetch(`/api/auth/me`, {
+      headers: {
+        authorization: token
       }
-      else {
-        window.localStorage.removeItem('token');
-      }
+    });
+    const json = await response.json();
+    if(response.ok){
+      setAuth(json);
+    }
+    else {
+      window.localStorage.removeItem('token');
     }
   };
 
@@ -55,13 +52,16 @@ function App() {
       const json = await response.json();
       setProducts(json);
     };
-
     fetchProducts();
   }, []);
 
   useEffect(()=> {
     const fetchFavorites = async()=> {
-      const response = await fetch(`/api/users/${auth.id}/favorites`);
+      const response = await fetch(`/api/users/${auth.id}/favorites`, {
+        headers: {
+          authorization: window.localStorage.getItem('token')
+        }
+      });
       const json = await response.json();
       if(response.ok){
         setFavorites(json);
@@ -83,11 +83,9 @@ function App() {
         'Content-Type': 'application/json'
       }
     });
-
     const json = await response.json();
     if(response.ok){
       window.localStorage.setItem('token', json.token);
-      console.log('token: ', await json); //dump
       attemptLoginWithToken();
     }
     else {
@@ -100,7 +98,8 @@ function App() {
       method: 'POST',
       body: JSON.stringify({ product_id }),
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        authorization: window.localStorage.getItem('token')
       }
     });
 
@@ -116,6 +115,9 @@ function App() {
   const removeFavorite = async(id)=> {
     const response = await fetch(`/api/users/${auth.id}/favorites/${id}`, {
       method: 'DELETE',
+      headers: {
+        authorization: window.localStorage.getItem('token')
+      }
     });
 
     if(response.ok){
@@ -134,7 +136,7 @@ function App() {
   return (
     <>
       {
-        !auth.id ? <Login login={ login }/> : <button onClick={ logout }>Logout { auth.username }</button>
+        auth.id ? <button onClick={ logout }>Logout { auth.username }</button> : <Login login={ login }/>
       }
       <ul>
         {

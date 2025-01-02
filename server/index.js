@@ -23,6 +23,7 @@ app.use('/assets', express.static(path.join(__dirname, '../client/dist/assets'))
 const isLoggedIn = async (req, res, next) => {
   try {
     req.user = await findUserWithToken(req.headers.authorization);
+    console.log('req.user: ', await req.user);
     next();
   } catch (ex) {
     next(ex)
@@ -57,6 +58,8 @@ app.get('/api/users', async(req, res, next)=> {
 });
 
 app.get('/api/users/:id/favorites', isLoggedIn, async(req, res, next)=> {
+  console.log('req.params.id: ', req.params.id);
+  console.log('req.user.id: ', req.user.id);
   try {
     if(req.params.id !== req.user.id){
       const error = Error('not authorized');
